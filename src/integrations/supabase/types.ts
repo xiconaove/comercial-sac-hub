@@ -14,16 +14,481 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string | null
+          created_by: string | null
+          document: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          phone: string | null
+          state: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          document?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          document?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      custom_fields: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          display_order: number | null
+          field_type: string
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          name: string
+          options: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          display_order?: number | null
+          field_type?: string
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          name: string
+          options?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          display_order?: number | null
+          field_type?: string
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          name?: string
+          options?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      permissions: {
+        Row: {
+          can_create: boolean | null
+          can_delete: boolean | null
+          can_read: boolean | null
+          can_update: boolean | null
+          created_at: string | null
+          id: string
+          resource: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          can_create?: boolean | null
+          can_delete?: boolean | null
+          can_read?: boolean | null
+          can_update?: boolean | null
+          created_at?: string | null
+          id?: string
+          resource: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          can_create?: boolean | null
+          can_delete?: boolean | null
+          can_read?: boolean | null
+          can_update?: boolean | null
+          created_at?: string | null
+          id?: string
+          resource?: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          department: string | null
+          email: string
+          full_name: string | null
+          id: string
+          is_active: boolean | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          department?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+          is_active?: boolean | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          department?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      sac_comments: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_internal: boolean | null
+          sac_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_internal?: boolean | null
+          sac_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_internal?: boolean | null
+          sac_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sac_comments_sac_id_fkey"
+            columns: ["sac_id"]
+            isOneToOne: false
+            referencedRelation: "sacs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sac_custom_values: {
+        Row: {
+          created_at: string | null
+          field_id: string
+          id: string
+          sac_id: string
+          updated_at: string | null
+          value: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          field_id: string
+          id?: string
+          sac_id: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          field_id?: string
+          id?: string
+          sac_id?: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sac_custom_values_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "custom_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sac_custom_values_sac_id_fkey"
+            columns: ["sac_id"]
+            isOneToOne: false
+            referencedRelation: "sacs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sac_history: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          new_value: string | null
+          old_value: string | null
+          sac_id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          sac_id: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          sac_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sac_history_sac_id_fkey"
+            columns: ["sac_id"]
+            isOneToOne: false
+            referencedRelation: "sacs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sac_images: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string | null
+          sac_id: string
+          uploaded_by: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          sac_id: string
+          uploaded_by?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          sac_id?: string
+          uploaded_by?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sac_images_sac_id_fkey"
+            columns: ["sac_id"]
+            isOneToOne: false
+            referencedRelation: "sacs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sac_observers: {
+        Row: {
+          created_at: string | null
+          id: string
+          sac_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          sac_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          sac_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sac_observers_sac_id_fkey"
+            columns: ["sac_id"]
+            isOneToOne: false
+            referencedRelation: "sacs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sacs: {
+        Row: {
+          analyst_id: string | null
+          client_id: string | null
+          created_at: string | null
+          created_by: string
+          deadline: string | null
+          description: string
+          id: string
+          nf_number: string | null
+          number: number
+          priority: Database["public"]["Enums"]["sac_priority"] | null
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["sac_status"] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          analyst_id?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          created_by: string
+          deadline?: string | null
+          description: string
+          id?: string
+          nf_number?: string | null
+          number?: number
+          priority?: Database["public"]["Enums"]["sac_priority"] | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["sac_status"] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          analyst_id?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          created_by?: string
+          deadline?: string | null
+          description?: string
+          id?: string
+          nf_number?: string | null
+          number?: number
+          priority?: Database["public"]["Enums"]["sac_priority"] | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["sac_status"] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sacs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin_or_supervisor: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "supervisor" | "analista" | "usuario"
+      sac_priority: "baixa" | "media" | "alta" | "urgente"
+      sac_status:
+        | "aberto"
+        | "em_andamento"
+        | "aguardando_cliente"
+        | "aguardando_interno"
+        | "resolvido"
+        | "cancelado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +615,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "supervisor", "analista", "usuario"],
+      sac_priority: ["baixa", "media", "alta", "urgente"],
+      sac_status: [
+        "aberto",
+        "em_andamento",
+        "aguardando_cliente",
+        "aguardando_interno",
+        "resolvido",
+        "cancelado",
+      ],
+    },
   },
 } as const
