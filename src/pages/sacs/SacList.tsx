@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,8 +26,11 @@ import {
   Eye,
   Calendar,
   User,
-  Building2
+  Building2,
+  List,
+  Kanban
 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -49,6 +52,7 @@ type SacPriority = 'baixa' | 'media' | 'alta' | 'urgente';
 
 export default function SacList() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [sacs, setSacs] = useState<Sac[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get('search') || '');
@@ -157,12 +161,26 @@ export default function SacList() {
           <h1 className="text-2xl font-bold">SACs</h1>
           <p className="text-muted-foreground">Gerencie todos os chamados de atendimento</p>
         </div>
-        <Button asChild className="gradient-primary">
-          <Link to="/sacs/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Novo SAC
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Tabs defaultValue="list" className="w-auto">
+            <TabsList>
+              <TabsTrigger value="list">
+                <List className="h-4 w-4 mr-1" />
+                Lista
+              </TabsTrigger>
+              <TabsTrigger value="kanban" onClick={() => navigate('/sacs/kanban')}>
+                <Kanban className="h-4 w-4 mr-1" />
+                Kanban
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Button asChild className="gradient-primary">
+            <Link to="/sacs/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Novo SAC
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}

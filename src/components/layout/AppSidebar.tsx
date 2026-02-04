@@ -11,7 +11,11 @@ import {
   FileText,
   Shield,
   LogOut,
-  ChevronLeft,
+  Kanban,
+  Book,
+  History,
+  CheckSquare,
+  Settings2,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -29,19 +33,25 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import saLogo from '@/assets/sa-logo.png';
 
 const mainNavItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'SACs', url: '/sacs', icon: Headphones },
+  { title: 'Kanban', url: '/sacs/kanban', icon: Kanban },
+  { title: 'Minhas Tarefas', url: '/tasks', icon: CheckSquare },
   { title: 'Clientes', url: '/clients', icon: Building2 },
   { title: 'Relatórios', url: '/reports', icon: BarChart3 },
+  { title: 'Histórico', url: '/history', icon: History },
+  { title: 'Documentação', url: '/docs', icon: Book },
 ];
 
 const adminNavItems = [
   { title: 'Usuários', url: '/admin/users', icon: Users },
   { title: 'Permissões', url: '/admin/permissions', icon: Shield },
   { title: 'Campos Personalizados', url: '/admin/custom-fields', icon: Settings },
+  { title: 'Config. Card', url: '/admin/card-settings', icon: Settings2 },
   { title: 'Logs do Sistema', url: '/admin/logs', icon: FileText },
 ];
 
@@ -142,14 +152,17 @@ export function AppSidebar() {
               </p>
             </div>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={signOut}
-            className="text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={signOut}
+              className="text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </SidebarFooter>
     </Sidebar>
