@@ -8,11 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -22,20 +18,17 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useCustomFields } from '@/hooks/useCustomFields';
+import { CustomFieldsRenderer } from '@/components/CustomFieldsRenderer';
+import { motion } from 'framer-motion';
 
-interface Client {
-  id: string;
-  name: string;
-}
-
-interface Analyst {
-  id: string;
-  full_name: string;
-}
+interface Client { id: string; name: string; }
+interface Analyst { id: string; full_name: string; }
 
 export default function SacForm() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { fields: customFields } = useCustomFields('sac');
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +43,7 @@ export default function SacForm() {
   const [nfNumber, setNfNumber] = useState('');
   const [deadline, setDeadline] = useState<Date | undefined>();
   const [images, setImages] = useState<File[]>([]);
+  const [customValues, setCustomValues] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchClients();
@@ -71,14 +65,15 @@ export default function SacForm() {
     setImages(prev => [...prev, ...files].slice(0, 5));
   };
 
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+  const removeImage = (index: number) => setImages(prev => prev.filter((_, i) => i !== index));
+
+  const handleCustomFieldChange = (fieldId: string, value: string) => {
+    setCustomValues(prev => ({ ...prev, [fieldId]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    
     setError(null);
     setLoading(true);
 
@@ -86,8 +81,7 @@ export default function SacForm() {
       const { data: sac, error: sacError } = await supabase
         .from('sacs')
         .insert({
-          title,
-          description,
+          title, description,
           client_id: clientId || null,
           analyst_id: analystId || null,
           priority: priority as any,
@@ -100,12 +94,20 @@ export default function SacForm() {
 
       if (sacError) throw sacError;
 
-      // Log history
+      // Save custom field values
+      const customEntries = Object.entries(customValues).filter(([_, v]) => v);
+      if (customEntries.length > 0) {
+        await supabase.from('sac_custom_values').insert(
+          customEntries.map(([fieldId, value]) => ({
+            sac_id: sac.id,
+            field_id: fieldId,
+            value,
+          }))
+        );
+      }
+
       await supabase.from('sac_history').insert({
-        sac_id: sac.id,
-        user_id: user.id,
-        action: 'SAC criado',
-        new_value: title,
+        sac_id: sac.id, user_id: user.id, action: 'SAC criado', new_value: title,
       });
 
       toast.success('SAC criado com sucesso!');
@@ -118,10 +120,9 @@ export default function SacForm() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Voltar
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 max-w-4xl mx-auto">
+      <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-4">
+        <ArrowLeft className="mr-1.5 h-4 w-4" />Voltar
       </Button>
 
       <Card className="shadow-card border-0">
@@ -131,71 +132,35 @@ export default function SacForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+            {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="title">Título *</Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Descrição breve do problema"
-                  required
-                />
+                <Label>Título *</Label>
+                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Descrição breve do problema" required />
               </div>
-
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="description">Descrição detalhada *</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Descreva o problema em detalhes..."
-                  rows={4}
-                  required
-                />
+                <Label>Descrição detalhada *</Label>
+                <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descreva o problema..." rows={4} required />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="client">Cliente</Label>
+                <Label>Cliente</Label>
                 <Select value={clientId} onValueChange={setClientId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map(client => (
-                      <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="analyst">Analista Responsável</Label>
+                <Label>Analista</Label>
                 <Select value={analystId} onValueChange={setAnalystId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um analista" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {analysts.map(analyst => (
-                      <SelectItem key={analyst.id} value={analyst.id}>{analyst.full_name}</SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{analysts.map(a => <SelectItem key={a.id} value={a.id}>{a.full_name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="priority">Prioridade</Label>
+                <Label>Prioridade</Label>
                 <Select value={priority} onValueChange={setPriority}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="baixa">Baixa</SelectItem>
                     <SelectItem value="media">Média</SelectItem>
@@ -204,78 +169,49 @@ export default function SacForm() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="nf">Número da NF</Label>
-                <Input
-                  id="nf"
-                  value={nfNumber}
-                  onChange={(e) => setNfNumber(e.target.value)}
-                  placeholder="Ex: 12345"
-                />
+                <Label>Número da NF</Label>
+                <Input value={nfNumber} onChange={(e) => setNfNumber(e.target.value)} placeholder="Ex: 12345" />
               </div>
-
               <div className="space-y-2">
                 <Label>Prazo</Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'w-full justify-start text-left font-normal',
-                        !deadline && 'text-muted-foreground'
-                      )}
-                    >
+                    <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !deadline && 'text-muted-foreground')}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {deadline ? format(deadline, 'PPP', { locale: ptBR }) : 'Selecione uma data'}
+                      {deadline ? format(deadline, 'PPP', { locale: ptBR }) : 'Selecione'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={deadline}
-                      onSelect={setDeadline}
-                      initialFocus
-                      locale={ptBR}
-                    />
+                    <Calendar mode="single" selected={deadline} onSelect={setDeadline} initialFocus locale={ptBR} />
                   </PopoverContent>
                 </Popover>
               </div>
 
+              {/* Custom Fields */}
+              {customFields.length > 0 && (
+                <div className="md:col-span-2 space-y-4">
+                  <Label className="text-base font-semibold">Campos Personalizados</Label>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <CustomFieldsRenderer fields={customFields} values={customValues} onChange={handleCustomFieldChange} />
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2 md:col-span-2">
                 <Label>Imagens (máx. 5)</Label>
                 <div className="border-2 border-dashed rounded-lg p-4">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageChange}
-                    className="hidden"
-                    id="images"
-                    disabled={images.length >= 5}
-                  />
-                  <label
-                    htmlFor="images"
-                    className="flex flex-col items-center cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Upload className="h-8 w-8 mb-2" />
-                    <span>Clique para adicionar imagens</span>
+                  <input type="file" accept="image/*" multiple onChange={handleImageChange} className="hidden" id="images" disabled={images.length >= 5} />
+                  <label htmlFor="images" className="flex flex-col items-center cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
+                    <Upload className="h-8 w-8 mb-2" /><span className="text-sm">Clique para adicionar</span>
                   </label>
                 </div>
                 {images.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {images.map((img, i) => (
                       <div key={i} className="relative group">
-                        <img
-                          src={URL.createObjectURL(img)}
-                          alt={`Preview ${i}`}
-                          className="h-20 w-20 object-cover rounded-lg"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(i)}
-                          className="absolute -top-2 -right-2 h-5 w-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
+                        <img src={URL.createObjectURL(img)} alt="" className="h-20 w-20 object-cover rounded-lg" />
+                        <button type="button" onClick={() => removeImage(i)} className="absolute -top-2 -right-2 h-5 w-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <X className="h-3 w-3" />
                         </button>
                       </div>
@@ -285,24 +221,15 @@ export default function SacForm() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => navigate(-1)}>
-                Cancelar
-              </Button>
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancelar</Button>
               <Button type="submit" className="gradient-primary" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Criando...
-                  </>
-                ) : (
-                  'Criar SAC'
-                )}
+                {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Criando...</> : 'Criar SAC'}
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }

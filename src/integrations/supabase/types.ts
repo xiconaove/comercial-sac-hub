@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_custom_values: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          field_id: string
+          id: string
+          updated_at: string | null
+          value: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          field_id: string
+          id?: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          field_id?: string
+          id?: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_custom_values_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_custom_values_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "custom_fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
@@ -67,6 +109,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           display_order: number | null
+          entity_type: string
           field_type: string
           id: string
           is_active: boolean | null
@@ -79,6 +122,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           display_order?: number | null
+          entity_type?: string
           field_type?: string
           id?: string
           is_active?: boolean | null
@@ -91,6 +135,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           display_order?: number | null
+          entity_type?: string
           field_type?: string
           id?: string
           is_active?: boolean | null
@@ -462,6 +507,45 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      workflow_stages: {
+        Row: {
+          color: string
+          created_at: string | null
+          created_by: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string
+          created_at?: string | null
+          created_by?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string
+          created_at?: string | null
+          created_by?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          slug?: string
+          updated_at?: string | null
         }
         Relationships: []
       }

@@ -3,19 +3,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
-  Headphones, 
-  Clock, 
-  CheckCircle2, 
-  AlertTriangle, 
-  TrendingUp, 
-  Users,
-  Plus,
-  ArrowUpRight,
-  ArrowDownRight
+  Headphones, Clock, CheckCircle2, AlertTriangle, TrendingUp, Plus, 
+  ArrowUpRight, Users, BarChart3, Calendar
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { format, subDays, startOfDay, endOfDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
+} from 'recharts';
+import { motion } from 'framer-motion';
 
 interface DashboardStats {
   total: number;
@@ -23,6 +22,8 @@ interface DashboardStats {
   emAndamento: number;
   resolvidos: number;
   vencidos: number;
+  aguardando: number;
+  hojeCriados: number;
 }
 
 interface RecentSac {
@@ -32,201 +33,229 @@ interface RecentSac {
   status: string;
   priority: string;
   created_at: string;
-  client?: { name: string };
+  client_name: string | null;
 }
+
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.05 } },
+};
+const item = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } };
 
 export default function Dashboard() {
   const { profile } = useAuth();
-  const [stats, setStats] = useState<DashboardStats>({ total: 0, abertos: 0, emAndamento: 0, resolvidos: 0, vencidos: 0 });
+  const [stats, setStats] = useState<DashboardStats>({ total: 0, abertos: 0, emAndamento: 0, resolvidos: 0, vencidos: 0, aguardando: 0, hojeCriados: 0 });
   const [recentSacs, setRecentSacs] = useState<RecentSac[]>([]);
+  const [statusData, setStatusData] = useState<{ name: string; value: number; color: string }[]>([]);
+  const [weeklyData, setWeeklyData] = useState<{ day: string; criados: number; resolvidos: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  useEffect(() => { fetchDashboardData(); }, []);
 
   const fetchDashboardData = async () => {
     try {
       const { data: sacs } = await supabase
         .from('sacs')
-        .select('id, number, title, status, priority, created_at, deadline, client:clients(name)')
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .select('id, number, title, status, priority, created_at, deadline, client_id, resolved_at')
+        .order('created_at', { ascending: false });
 
       if (sacs) {
         const now = new Date();
+        const today = startOfDay(now);
+        
         const statsData: DashboardStats = {
           total: sacs.length,
           abertos: sacs.filter(s => s.status === 'aberto').length,
           emAndamento: sacs.filter(s => s.status === 'em_andamento').length,
           resolvidos: sacs.filter(s => s.status === 'resolvido').length,
-          vencidos: sacs.filter(s => s.deadline && new Date(s.deadline) < now && s.status !== 'resolvido').length,
+          vencidos: sacs.filter(s => s.deadline && new Date(s.deadline) < now && s.status !== 'resolvido' && s.status !== 'cancelado').length,
+          aguardando: sacs.filter(s => s.status === 'aguardando_cliente' || s.status === 'aguardando_interno').length,
+          hojeCriados: sacs.filter(s => s.created_at && new Date(s.created_at) >= today).length,
         };
         setStats(statsData);
-        setRecentSacs(sacs.slice(0, 5) as RecentSac[]);
+
+        // Status pie data
+        setStatusData([
+          { name: 'Aberto', value: statsData.abertos, color: 'hsl(217, 91%, 50%)' },
+          { name: 'Em Andamento', value: statsData.emAndamento, color: 'hsl(38, 92%, 50%)' },
+          { name: 'Aguardando', value: statsData.aguardando, color: 'hsl(270, 91%, 60%)' },
+          { name: 'Resolvido', value: statsData.resolvidos, color: 'hsl(142, 76%, 36%)' },
+        ].filter(d => d.value > 0));
+
+        // Weekly data
+        const last7 = Array.from({ length: 7 }, (_, i) => {
+          const d = subDays(now, 6 - i);
+          const dayStart = startOfDay(d);
+          const dayEnd = endOfDay(d);
+          return {
+            day: format(d, 'EEE', { locale: ptBR }),
+            criados: sacs.filter(s => s.created_at && new Date(s.created_at) >= dayStart && new Date(s.created_at) <= dayEnd).length,
+            resolvidos: sacs.filter(s => s.resolved_at && new Date(s.resolved_at) >= dayStart && new Date(s.resolved_at) <= dayEnd).length,
+          };
+        });
+        setWeeklyData(last7);
+
+        // Recent SACs with client names
+        const recentRaw = sacs.slice(0, 8);
+        const clientIds = [...new Set(recentRaw.map(s => s.client_id).filter(Boolean))];
+        const { data: clients } = clientIds.length > 0
+          ? await supabase.from('clients').select('id, name').in('id', clientIds)
+          : { data: [] };
+        const cMap = new Map((clients || []).map(c => [c.id, c.name]));
+        setRecentSacs(recentRaw.map(s => ({
+          id: s.id, number: s.number, title: s.title, status: s.status,
+          priority: s.priority, created_at: s.created_at,
+          client_name: s.client_id ? cMap.get(s.client_id) || null : null,
+        })));
       }
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error('Dashboard error:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { label: string; className: string }> = {
-      aberto: { label: 'Aberto', className: 'bg-blue-100 text-blue-700 hover:bg-blue-100' },
-      em_andamento: { label: 'Em Andamento', className: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100' },
-      aguardando_cliente: { label: 'Aguardando Cliente', className: 'bg-purple-100 text-purple-700 hover:bg-purple-100' },
-      aguardando_interno: { label: 'Aguardando Interno', className: 'bg-orange-100 text-orange-700 hover:bg-orange-100' },
-      resolvido: { label: 'Resolvido', className: 'bg-green-100 text-green-700 hover:bg-green-100' },
-      cancelado: { label: 'Cancelado', className: 'bg-gray-100 text-gray-700 hover:bg-gray-100' },
+    const v: Record<string, { label: string; className: string }> = {
+      aberto: { label: 'Aberto', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
+      em_andamento: { label: 'Em Andamento', className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' },
+      aguardando_cliente: { label: 'Ag. Cliente', className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' },
+      resolvido: { label: 'Resolvido', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' },
+      cancelado: { label: 'Cancelado', className: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300' },
     };
-    const v = variants[status] || variants.aberto;
-    return <Badge className={v.className}>{v.label}</Badge>;
+    const d = v[status] || v.aberto;
+    return <Badge className={d.className}>{d.label}</Badge>;
   };
 
-  const getPriorityBadge = (priority: string) => {
-    const variants: Record<string, { label: string; className: string }> = {
-      baixa: { label: 'Baixa', className: 'bg-gray-100 text-gray-600' },
-      media: { label: 'Média', className: 'bg-blue-100 text-blue-600' },
-      alta: { label: 'Alta', className: 'bg-orange-100 text-orange-600' },
-      urgente: { label: 'Urgente', className: 'bg-red-100 text-red-600' },
-    };
-    const v = variants[priority] || variants.media;
-    return <Badge variant="outline" className={v.className}>{v.label}</Badge>;
-  };
+  const statCards = [
+    { label: 'Total SACs', value: stats.total, icon: Headphones, color: 'text-primary', bg: 'bg-primary/10' },
+    { label: 'Abertos', value: stats.abertos, icon: Headphones, color: 'text-blue-600', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+    { label: 'Em Andamento', value: stats.emAndamento, icon: Clock, color: 'text-yellow-600', bg: 'bg-yellow-100 dark:bg-yellow-900/30' },
+    { label: 'Resolvidos', value: stats.resolvidos, icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-100 dark:bg-green-900/30' },
+    { label: 'Vencidos', value: stats.vencidos, icon: AlertTriangle, color: 'text-destructive', bg: 'bg-red-100 dark:bg-red-900/30' },
+    { label: 'Criados Hoje', value: stats.hojeCriados, icon: Plus, color: 'text-indigo-600', bg: 'bg-indigo-100 dark:bg-indigo-900/30' },
+  ];
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <motion.div variants={container} initial="hidden" animate="show" className="p-6 space-y-6">
+      <motion.div variants={item} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Bem-vindo, {profile?.full_name || 'Usuário'}</p>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground text-sm">Bem-vindo, {profile?.full_name || 'Usuário'}</p>
         </div>
-        <Button asChild className="gradient-primary">
-          <Link to="/sacs/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Novo SAC
-          </Link>
+        <Button asChild className="gradient-primary h-9 text-sm">
+          <Link to="/sacs/new"><Plus className="mr-1.5 h-4 w-4" />Novo SAC</Link>
         </Button>
+      </motion.div>
+
+      {/* Stats */}
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+        {statCards.map((s, i) => (
+          <motion.div key={s.label} variants={item}>
+            <Card className="shadow-card border-0 hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className={`h-9 w-9 rounded-lg ${s.bg} flex items-center justify-center`}>
+                    <s.icon className={`h-4 w-4 ${s.color}`} />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold">{s.value}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{s.label}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card className="shadow-card border-0">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total SACs</CardTitle>
-            <Headphones className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-              <TrendingUp className="h-3 w-3 text-success" />
-              <span className="text-success">+12%</span> vs. mês anterior
-            </p>
-          </CardContent>
-        </Card>
+      {/* Charts Row */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <motion.div variants={item}>
+          <Card className="shadow-card border-0 h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Distribuição por Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {statusData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie data={statusData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                      {statusData.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">Sem dados</div>}
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card className="shadow-card border-0">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Abertos</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-              <Headphones className="h-4 w-4 text-blue-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.abertos}</div>
-            <p className="text-xs text-muted-foreground mt-1">Aguardando atendimento</p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card border-0">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Em Andamento</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center">
-              <Clock className="h-4 w-4 text-yellow-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.emAndamento}</div>
-            <p className="text-xs text-muted-foreground mt-1">Sendo tratados</p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card border-0">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Resolvidos</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.resolvidos}</div>
-            <p className="text-xs text-muted-foreground mt-1">Este mês</p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card border-0">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Vencidos</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
-              <AlertTriangle className="h-4 w-4 text-red-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.vencidos}</div>
-            <p className="text-xs text-muted-foreground mt-1">Prazo excedido</p>
-          </CardContent>
-        </Card>
+        <motion.div variants={item} className="lg:col-span-2">
+          <Card className="shadow-card border-0 h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Últimos 7 dias</CardTitle>
+              <CardDescription className="text-xs">SACs criados vs resolvidos</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={weeklyData}>
+                  <XAxis dataKey="day" fontSize={11} />
+                  <YAxis fontSize={11} />
+                  <Tooltip />
+                  <Bar dataKey="criados" name="Criados" fill="hsl(217, 91%, 50%)" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="resolvidos" name="Resolvidos" fill="hsl(142, 76%, 36%)" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       {/* Recent SACs */}
-      <Card className="shadow-card border-0">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>SACs Recentes</CardTitle>
-            <CardDescription>Últimos chamados registrados</CardDescription>
-          </div>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/sacs">Ver todos</Link>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {recentSacs.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Headphones className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>Nenhum SAC registrado ainda</p>
-              <Button asChild variant="link" className="mt-2">
-                <Link to="/sacs/new">Criar primeiro SAC</Link>
-              </Button>
+      <motion.div variants={item}>
+        <Card className="shadow-card border-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div>
+              <CardTitle className="text-sm">SACs Recentes</CardTitle>
+              <CardDescription className="text-xs">Últimos chamados registrados</CardDescription>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {recentSacs.map((sac) => (
-                <Link
-                  key={sac.id}
-                  to={`/sacs/${sac.id}`}
-                  className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-semibold text-primary">#{sac.number}</span>
+            <Button variant="ghost" size="sm" asChild className="text-xs">
+              <Link to="/sacs">Ver todos <ArrowUpRight className="ml-1 h-3 w-3" /></Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {recentSacs.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Headphones className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                <p className="text-sm">Nenhum SAC registrado</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {recentSacs.map((sac) => (
+                  <Link key={sac.id} to={`/sacs/${sac.id}`}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-primary w-12">#{sac.number}</span>
+                      <div>
+                        <p className="font-medium text-sm truncate max-w-[250px]">{sac.title}</p>
+                        <p className="text-xs text-muted-foreground">{sac.client_name || 'Sem cliente'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">{sac.title}</p>
-                      <p className="text-sm text-muted-foreground">{sac.client?.name || 'Sem cliente'}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground hidden sm:block">
+                        {sac.created_at && format(new Date(sac.created_at), 'dd/MM HH:mm', { locale: ptBR })}
+                      </span>
+                      {getStatusBadge(sac.status)}
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getPriorityBadge(sac.priority)}
-                    {getStatusBadge(sac.status)}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }

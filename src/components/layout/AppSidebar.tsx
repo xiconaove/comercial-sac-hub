@@ -11,11 +11,11 @@ import {
   FileText,
   Shield,
   LogOut,
-  Kanban,
   Book,
   History,
   CheckSquare,
   Settings2,
+  GitBranch,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -39,7 +39,6 @@ import saLogo from '@/assets/sa-logo.png';
 const mainNavItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'SACs', url: '/sacs', icon: Headphones },
-  { title: 'Kanban', url: '/sacs/kanban', icon: Kanban },
   { title: 'Minhas Tarefas', url: '/tasks', icon: CheckSquare },
   { title: 'Clientes', url: '/clients', icon: Building2 },
   { title: 'Relatórios', url: '/reports', icon: BarChart3 },
@@ -51,6 +50,7 @@ const adminNavItems = [
   { title: 'Usuários', url: '/admin/users', icon: Users },
   { title: 'Permissões', url: '/admin/permissions', icon: Shield },
   { title: 'Campos Personalizados', url: '/admin/custom-fields', icon: Settings },
+  { title: 'Etapas do Fluxo', url: '/admin/workflow-stages', icon: GitBranch },
   { title: 'Config. Card', url: '/admin/card-settings', icon: Settings2 },
   { title: 'Logs do Sistema', url: '/admin/logs', icon: FileText },
 ];
@@ -58,7 +58,7 @@ const adminNavItems = [
 export function AppSidebar() {
   const location = useLocation();
   const { profile, signOut, isAdminOrSupervisor } = useAuth();
-  const { state, toggleSidebar } = useSidebar();
+  const { state } = useSidebar();
   const collapsed = state === 'collapsed';
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
@@ -71,11 +71,11 @@ export function AppSidebar() {
     <Sidebar className="border-r-0 gradient-sidebar" collapsible="icon">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <img src={saLogo} alt="SA" className="h-10 w-10 rounded-lg bg-white/10 p-1" />
+          <img src={saLogo} alt="SA" className="h-9 w-9 rounded-lg bg-white/10 p-1" />
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="font-bold text-sidebar-foreground">SA COMERC</span>
-              <span className="text-xs text-sidebar-foreground/70">SAC</span>
+              <span className="font-bold text-sidebar-foreground tracking-tight">SA COMERC</span>
+              <span className="text-[10px] text-sidebar-foreground/60 uppercase tracking-widest">Sistema SAC</span>
             </div>
           )}
         </div>
@@ -83,8 +83,8 @@ export function AppSidebar() {
 
       <SidebarContent className="px-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/60 uppercase text-xs tracking-wider">
-            {!collapsed && 'Menu Principal'}
+          <SidebarGroupLabel className="text-sidebar-foreground/50 uppercase text-[10px] tracking-widest font-semibold">
+            {!collapsed && 'Menu'}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -93,11 +93,11 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild isActive={isActive(item.url)}>
                     <NavLink
                       to={item.url}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground/80 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm"
                     >
-                      <item.icon className="h-5 w-5" />
-                      {!collapsed && <span>{item.title}</span>}
+                      <item.icon className="h-4 w-4" />
+                      {!collapsed && <span className="text-sm">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -108,8 +108,8 @@ export function AppSidebar() {
 
         {isAdminOrSupervisor() && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground/60 uppercase text-xs tracking-wider">
-              {!collapsed && 'Administração'}
+            <SidebarGroupLabel className="text-sidebar-foreground/50 uppercase text-[10px] tracking-widest font-semibold">
+              {!collapsed && 'Admin'}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -118,11 +118,11 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild isActive={isActive(item.url)}>
                       <NavLink
                         to={item.url}
-                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground/80 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm"
                       >
-                        <item.icon className="h-5 w-5" />
-                        {!collapsed && <span>{item.title}</span>}
+                        <item.icon className="h-4 w-4" />
+                        {!collapsed && <span className="text-sm">{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -133,34 +133,34 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
-        <Separator className="mb-4 bg-sidebar-border" />
-        <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9 border-2 border-sidebar-foreground/20">
+      <SidebarFooter className="p-3">
+        <Separator className="mb-3 bg-sidebar-border/50" />
+        <div className="flex items-center gap-2.5">
+          <Avatar className="h-8 w-8 border border-sidebar-foreground/20">
             <AvatarImage src={profile?.avatar_url || undefined} />
-            <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-sm">
+            <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
               {getInitials(profile?.full_name)}
             </AvatarFallback>
           </Avatar>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
+              <p className="text-xs font-medium text-sidebar-foreground truncate">
                 {profile?.full_name || 'Usuário'}
               </p>
-              <p className="text-xs text-sidebar-foreground/60 truncate">
+              <p className="text-[10px] text-sidebar-foreground/50 truncate">
                 {profile?.email}
               </p>
             </div>
           )}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <ThemeToggle />
             <Button
               variant="ghost"
               size="icon"
               onClick={signOut}
-              className="text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              className="h-7 w-7 text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
