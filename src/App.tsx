@@ -11,7 +11,6 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import SacList from "@/pages/sacs/SacList";
-import SacKanbanPage from "@/pages/sacs/SacKanbanPage";
 import SacForm from "@/pages/sacs/SacForm";
 import SacDetail from "@/pages/sacs/SacDetail";
 import Clients from "@/pages/Clients";
@@ -23,6 +22,7 @@ import Users from "@/pages/admin/Users";
 import Permissions from "@/pages/admin/Permissions";
 import CustomFields from "@/pages/admin/CustomFields";
 import CardSettings from "@/pages/admin/CardSettings";
+import WorkflowStages from "@/pages/admin/WorkflowStages";
 import SystemLogs from "@/pages/admin/SystemLogs";
 import NotFound from "@/pages/NotFound";
 
@@ -47,7 +47,6 @@ const App = () => (
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="sacs" element={<SacList />} />
-                <Route path="sacs/kanban" element={<SacKanbanPage />} />
                 <Route path="sacs/new" element={<SacForm />} />
                 <Route path="sacs/:id" element={<SacDetail />} />
                 <Route path="clients" element={<Clients />} />
@@ -59,6 +58,7 @@ const App = () => (
                 <Route path="admin/permissions" element={<Permissions />} />
                 <Route path="admin/custom-fields" element={<CustomFields />} />
                 <Route path="admin/card-settings" element={<CardSettings />} />
+                <Route path="admin/workflow-stages" element={<WorkflowStages />} />
                 <Route path="admin/logs" element={<SystemLogs />} />
               </Route>
               <Route path="*" element={<NotFound />} />

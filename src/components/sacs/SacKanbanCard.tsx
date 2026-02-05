@@ -8,15 +8,12 @@ import { Calendar, Building2, GripVertical } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import type { Database } from '@/integrations/supabase/types';
-
-type SacStatus = Database['public']['Enums']['sac_status'];
 
 interface SacCard {
   id: string;
   number: number;
   title: string;
-  status: SacStatus;
+  status: string;
   priority: string;
   deadline: string | null;
   client_name: string | null;
@@ -37,30 +34,18 @@ const priorityColors: Record<string, string> = {
 };
 
 const priorityLabels: Record<string, string> = {
-  baixa: 'Baixa',
-  media: 'Média',
-  alta: 'Alta',
-  urgente: 'Urgente',
+  baixa: 'Baixa', media: 'Média', alta: 'Alta', urgente: 'Urgente',
 };
 
 export function SacKanbanCard({ sac, isDragging }: SacKanbanCardProps) {
   const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging: isSortableDragging,
+    attributes, listeners, setNodeRef, transform, transition, isDragging: isSortableDragging,
   } = useSortable({ id: sac.id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const style = { transform: CSS.Transform.toString(transform), transition };
 
   const isOverdue = sac.deadline && 
-    sac.status !== 'resolvido' && 
-    sac.status !== 'cancelado' &&
+    sac.status !== 'resolvido' && sac.status !== 'cancelado' &&
     isAfter(new Date(), new Date(sac.deadline));
 
   const getInitials = (name: string | null) => {
@@ -69,63 +54,40 @@ export function SacKanbanCard({ sac, isDragging }: SacKanbanCardProps) {
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        'touch-none',
-        (isDragging || isSortableDragging) && 'opacity-50'
-      )}
-    >
+    <div ref={setNodeRef} style={style} className={cn('touch-none', (isDragging || isSortableDragging) && 'opacity-40')}>
       <Card className={cn(
-        'border-l-4 cursor-pointer hover:shadow-md transition-shadow',
+        'border-l-[3px] cursor-pointer hover:shadow-md transition-all duration-150 bg-card',
         priorityColors[sac.priority] || 'border-l-gray-400',
         isOverdue && 'bg-destructive/5'
       )}>
-        <CardContent className="p-3">
-          <div className="flex items-start gap-2">
-            <div
-              {...attributes}
-              {...listeners}
-              className="cursor-grab active:cursor-grabbing mt-0.5"
-            >
-              <GripVertical className="h-4 w-4 text-muted-foreground" />
+        <CardContent className="p-2.5">
+          <div className="flex items-start gap-1.5">
+            <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing mt-0.5 opacity-40 hover:opacity-100 transition-opacity">
+              <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
             </div>
-            
             <div className="flex-1 min-w-0">
               <Link to={`/sacs/${sac.id}`} className="block">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="text-xs font-semibold text-primary">#{sac.number}</span>
-                  <Badge variant="outline" className="text-[10px] px-1.5">
-                    {priorityLabels[sac.priority]}
-                  </Badge>
+                <div className="flex items-center justify-between gap-1 mb-1">
+                  <span className="text-[10px] font-bold text-primary">#{sac.number}</span>
+                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">{priorityLabels[sac.priority]}</Badge>
                 </div>
-                
-                <h4 className="font-medium text-sm line-clamp-2 mb-2">{sac.title}</h4>
-                
+                <h4 className="font-medium text-xs line-clamp-2 mb-1.5 leading-tight">{sac.title}</h4>
                 {sac.client_name && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-                    <Building2 className="h-3 w-3" />
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1.5">
+                    <Building2 className="h-2.5 w-2.5" />
                     <span className="truncate">{sac.client_name}</span>
                   </div>
                 )}
-                
-                <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center justify-between">
                   {sac.deadline && (
-                    <div className={cn(
-                      'flex items-center gap-1 text-xs',
-                      isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'
-                    )}>
-                      <Calendar className="h-3 w-3" />
+                    <div className={cn('flex items-center gap-0.5 text-[10px]', isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground')}>
+                      <Calendar className="h-2.5 w-2.5" />
                       {format(new Date(sac.deadline), 'dd/MM', { locale: ptBR })}
                     </div>
                   )}
-                  
                   {sac.analyst_name && (
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                        {getInitials(sac.analyst_name)}
-                      </AvatarFallback>
+                    <Avatar className="h-5 w-5">
+                      <AvatarFallback className="text-[8px] bg-primary/10 text-primary">{getInitials(sac.analyst_name)}</AvatarFallback>
                     </Avatar>
                   )}
                 </div>
