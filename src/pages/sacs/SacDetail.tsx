@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select';
 import {
   ArrowLeft, Calendar, Building2, User, Clock, Send, History, Eye, MessageSquare,
-  Loader2, FileText, UserPlus, Trash2, CheckCircle2, Pencil, Tag,
+  Loader2, FileText, UserPlus, Trash2, CheckCircle2, Pencil, Tag, Paperclip,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { SacEditDialog } from '@/components/sacs/SacEditDialog';
 import { useSacCustomValues } from '@/hooks/useSacCustomValues';
+import { SacDocuments } from '@/components/sacs/SacDocuments';
 
 type SacStatus = 'aberto' | 'em_andamento' | 'aguardando_cliente' | 'aguardando_interno' | 'resolvido' | 'cancelado';
 
@@ -265,6 +266,7 @@ export default function SacDetail() {
           <Tabs defaultValue="comments" className="w-full">
             <TabsList className="w-full justify-start bg-muted/50">
               <TabsTrigger value="comments" className="gap-1.5 text-xs"><MessageSquare className="h-3.5 w-3.5" />Comentários ({comments.length})</TabsTrigger>
+              <TabsTrigger value="documents" className="gap-1.5 text-xs"><Paperclip className="h-3.5 w-3.5" />Documentos</TabsTrigger>
               <TabsTrigger value="history" className="gap-1.5 text-xs"><History className="h-3.5 w-3.5" />Histórico ({history.length})</TabsTrigger>
               <TabsTrigger value="observers" className="gap-1.5 text-xs"><Eye className="h-3.5 w-3.5" />Observadores ({observers.length})</TabsTrigger>
             </TabsList>
@@ -305,6 +307,10 @@ export default function SacDetail() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="documents" className="mt-3">
+              <SacDocuments sacId={sac.id} />
             </TabsContent>
 
             <TabsContent value="history" className="mt-3">

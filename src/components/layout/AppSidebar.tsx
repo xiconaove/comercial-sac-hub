@@ -12,6 +12,7 @@ import {
   Shield,
   LogOut,
   Book,
+  Paperclip,
   History,
   CheckSquare,
   Settings2,
@@ -43,7 +44,7 @@ const mainNavItems = [
   { title: 'Clientes', url: '/clients', icon: Building2 },
   { title: 'Relatórios', url: '/reports', icon: BarChart3 },
   { title: 'Histórico', url: '/history', icon: History },
-  { title: 'Documentação', url: '/docs', icon: Book },
+  { title: 'Arquivos', url: '/docs', icon: Paperclip },
 ];
 
 const adminNavItems = [
