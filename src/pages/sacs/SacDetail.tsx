@@ -14,12 +14,14 @@ import {
 } from '@/components/ui/select';
 import {
   ArrowLeft, Calendar, Building2, User, Clock, Send, History, Eye, MessageSquare,
-  Loader2, FileText, UserPlus, Trash2,
+  Loader2, FileText, UserPlus, Trash2, CheckCircle2, Pencil, Tag,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { SacEditDialog } from '@/components/sacs/SacEditDialog';
+import { useSacCustomValues } from '@/hooks/useSacCustomValues';
 
 type SacStatus = 'aberto' | 'em_andamento' | 'aguardando_cliente' | 'aguardando_interno' | 'resolvido' | 'cancelado';
 
@@ -53,6 +55,9 @@ export default function SacDetail() {
   const [isInternal, setIsInternal] = useState(false);
   const [sendingComment, setSendingComment] = useState(false);
   const [selectedObserver, setSelectedObserver] = useState('');
+  const [editOpen, setEditOpen] = useState(false);
+
+  const { customValues, refetch: refetchCustomValues } = useSacCustomValues(id);
 
   useEffect(() => {
     if (id) {
@@ -161,6 +166,12 @@ export default function SacDetail() {
     }
   };
 
+  const handleEditSaved = () => {
+    fetchSacDetails();
+    fetchHistory();
+    refetchCustomValues();
+  };
+
   const getStatusBadge = (status: string) => {
     const v: Record<string, { label: string; className: string }> = {
       aberto: { label: 'Aberto', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
@@ -205,6 +216,9 @@ export default function SacDetail() {
             <Badge variant="destructive" className="text-xs">Vencido</Badge>
           )}
         </div>
+        <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+          <Pencil className="mr-1.5 h-4 w-4" />Editar
+        </Button>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -223,6 +237,29 @@ export default function SacDetail() {
               <p className="whitespace-pre-wrap text-sm text-foreground leading-relaxed">{sac.description}</p>
             </CardContent>
           </Card>
+
+          {/* Custom Fields Display */}
+          {customValues.length > 0 && (
+            <Card className="shadow-card border-0">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Tag className="h-4 w-4" />Campos Personalizados
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {customValues.map(({ field, value }) => (
+                    <div key={field.id} className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-muted/50">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{field.name}</span>
+                      <span className="text-sm font-medium">
+                        {field.field_type === 'checkbox' ? (value === 'true' ? 'Sim' : 'Não') : value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Tabs */}
           <Tabs defaultValue="comments" className="w-full">
@@ -357,6 +394,7 @@ export default function SacDetail() {
               {[
                 { icon: Building2, label: 'Cliente', value: clientName || 'Não informado' },
                 { icon: User, label: 'Analista', value: analystName || 'Não atribuído' },
+                { icon: FileText, label: 'Nº NF', value: sac.nf_number || 'Não informado' },
                 { icon: Calendar, label: 'Prazo', value: sac.deadline ? format(new Date(sac.deadline), 'dd/MM/yyyy', { locale: ptBR }) : 'Não definido' },
                 { icon: User, label: 'Criado por', value: creatorName || 'Desconhecido' },
                 { icon: Clock, label: 'Criado em', value: format(new Date(sac.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR }) },
@@ -383,9 +421,14 @@ export default function SacDetail() {
           </Card>
         </div>
       </div>
+
+      {/* Edit Dialog */}
+      <SacEditDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        sac={sac}
+        onSaved={handleEditSaved}
+      />
     </motion.div>
   );
 }
-
-// import needed for resolved_at display
-import { CheckCircle2 } from 'lucide-react';
