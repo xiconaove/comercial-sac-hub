@@ -24,6 +24,8 @@ import CustomFields from "@/pages/admin/CustomFields";
 import CardSettings from "@/pages/admin/CardSettings";
 import WorkflowStages from "@/pages/admin/WorkflowStages";
 import SystemLogs from "@/pages/admin/SystemLogs";
+import LandingPages from "@/pages/admin/LandingPages";
+import LandingPageForm from "@/pages/public/LandingPageForm";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +45,7 @@ const App = () => (
           <AuthProvider>
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/lp/:slug" element={<LandingPageForm />} />
               <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
@@ -59,6 +62,7 @@ const App = () => (
                 <Route path="admin/custom-fields" element={<CustomFields />} />
                 <Route path="admin/card-settings" element={<CardSettings />} />
                 <Route path="admin/workflow-stages" element={<WorkflowStages />} />
+                <Route path="admin/landing-pages" element={<LandingPages />} />
                 <Route path="admin/logs" element={<SystemLogs />} />
               </Route>
               <Route path="*" element={<NotFound />} />

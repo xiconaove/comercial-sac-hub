@@ -146,6 +146,65 @@ export type Database = {
         }
         Relationships: []
       }
+      landing_pages: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          primary_color: string | null
+          responsible_id: string | null
+          secondary_color: string | null
+          slug: string
+          success_message: string | null
+          title: string
+          updated_at: string
+          welcome_message: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          primary_color?: string | null
+          responsible_id?: string | null
+          secondary_color?: string | null
+          slug: string
+          success_message?: string | null
+          title: string
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          primary_color?: string | null
+          responsible_id?: string | null
+          secondary_color?: string | null
+          slug?: string
+          success_message?: string | null
+          title?: string
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_pages_responsible_id_fkey"
+            columns: ["responsible_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           can_create: boolean | null

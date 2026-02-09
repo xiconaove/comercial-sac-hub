@@ -17,6 +17,7 @@ import {
   CheckSquare,
   Settings2,
   GitBranch,
+  Globe,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -52,6 +53,7 @@ const adminNavItems = [
   { title: 'Permissões', url: '/admin/permissions', icon: Shield },
   { title: 'Campos Personalizados', url: '/admin/custom-fields', icon: Settings },
   { title: 'Etapas do Fluxo', url: '/admin/workflow-stages', icon: GitBranch },
+  { title: 'Landing Pages', url: '/admin/landing-pages', icon: Globe },
   { title: 'Config. Card', url: '/admin/card-settings', icon: Settings2 },
   { title: 'Logs do Sistema', url: '/admin/logs', icon: FileText },
 ];
