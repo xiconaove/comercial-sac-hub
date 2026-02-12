@@ -44,6 +44,13 @@ serve(async (req) => {
       );
     }
 
+    if (!lp.responsible_id) {
+      return new Response(
+        JSON.stringify({ error: "Landing page sem responsável configurado. Contate o administrador." }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     let clientId = company.existing_client_id || null;
 
     // Create new client if needed
@@ -85,7 +92,7 @@ serve(async (req) => {
         created_by: lp.responsible_id,
         analyst_id: lp.responsible_id,
       })
-      .select("number")
+      .select("id, number")
       .single();
 
     if (sacError) {
@@ -98,27 +105,11 @@ serve(async (req) => {
 
     // Add history entry
     await supabase.from("sac_history").insert({
-      sac_id: newSac.number ? undefined : undefined, // we need the id
+      sac_id: newSac.id,
       action: "SAC criado via Landing Page",
       new_value: sac.title,
       user_id: lp.responsible_id,
-    }).then(() => {});
-
-    // Get the sac id for history
-    const { data: sacData } = await supabase
-      .from("sacs")
-      .select("id")
-      .eq("number", newSac.number)
-      .single();
-
-    if (sacData) {
-      await supabase.from("sac_history").insert({
-        sac_id: sacData.id,
-        action: "SAC criado via Landing Page",
-        new_value: sac.title,
-        user_id: lp.responsible_id,
-      });
-    }
+    });
 
     return new Response(
       JSON.stringify({ success: true, protocol: newSac.number }),
